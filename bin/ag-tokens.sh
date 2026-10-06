@@ -2,7 +2,8 @@
 # agentglass-herdr — sidebar tokens $ag_cost / $ag_alert: on | off | run [--fresh]
 #   on    enable (a flag file in the state dir) and report once      (action tokens-on)
 #   off   disable and clear every token this plugin set              (action tokens-off)
-#   run   one report, from the event and startup hooks (bin/ag-event.sh); --fresh sends every value again
+#   run   one report, from the event and startup hooks (bin/ag-event.sh); --fresh sends every value again, at once
+# Reports are paced: at most one run per TOKENS_MIN_INTERVAL seconds (plugin config, default 10).
 # One run = one `agentglass --json --live --all-projects` (contract 1 fields mux_kind, mux_pane, costUsd, stuck) → for each
 # agent in a herdr pane `herdr pane report-metadata` with ag_cost (7 characters) and ag_alert (10 columns), and per
 # workspace the sum of its panes' cost. A value is sent only when it changed. Runs never overlap: an event during a run
@@ -14,6 +15,7 @@
 SOURCE=plugin:agentglass
 FLAG=$AGH_STATE/tokens.on
 DIRTY=$AGH_STATE/dirty
+FORCE=""
 LAST=$AGH_STATE/tokens # last reported values: p.<pane> / w.<workspace>, two lines (ag_cost, ag_alert)
 
 if [ -z "$AGH_STATE" ]; then echo "agentglass-herdr: HERDR_PLUGIN_STATE_DIR not set" >&2; exit 1; fi
@@ -83,17 +85,34 @@ one_run() {
   done
 }
 
+# pace — at most one run per TOKENS_MIN_INTERVAL seconds (plugin config, default 10): with many agents changing state,
+# one agentglass run (~0.5 s of CPU with a large history) per change would add up; events meanwhile only mark the run
+# dirty. Runs under the lock, so the wait holds back every other hook too.
+pace() {
+  [ -n "$FORCE" ] && { FORCE=""; return 0; }
+  iv=$(ag_cfg TOKENS_MIN_INTERVAL); case "$iv" in ''|*[!0-9]*) iv=10 ;; esac
+  last=$(cat "$AGH_STATE/last-run" 2>/dev/null || echo 0); case "$last" in ''|*[!0-9]*) last=0 ;; esac
+  wait_s=$((last + iv - $(date +%s)))
+  if [ "$wait_s" -gt 0 ] && [ "$wait_s" -le "$iv" ]; then sleep "$wait_s"; fi
+  return 0
+}
+
 run() {
   [ -f "$FLAG" ] || return 0
   if ! ag_need 2>"$AGH_STATE/need.err"; then ag_log_once contract "$(cat "$AGH_STATE/need.err")"; return 0; fi
   [ -n "$HERDR" ] || { ag_log_once herdr "herdr not found"; return 0; }
   rounds=0
   while [ "$rounds" -lt 3 ]; do
-    if ! ag_lock; then : > "$DIRTY"; return 0; fi # a run is going: it goes again for us
+    # dirty first, then the lock: either we get the lock, or the holder had not yet unlocked and will see dirty
+    # when it does (it checks after its unlock), so no event is lost between its last check and its unlock
+    : > "$DIRTY"
+    if ! ag_lock; then return 0; fi # a run is going: it goes again for us
     trap 'ag_unlock' EXIT
     trap 'ag_unlock; exit 1' INT TERM HUP
     while [ "$rounds" -lt 3 ] && [ -f "$FLAG" ]; do
+      pace
       rm -f "$DIRTY"
+      date +%s > "$AGH_STATE/last-run"
       one_run
       rounds=$((rounds + 1))
       [ -f "$DIRTY" ] || break
@@ -123,7 +142,7 @@ case "${1-}" in
     if ! msg=$(ag_need 2>&1); then notify "$msg"; exit 1; fi
     : > "$FLAG"
     forget
-    run
+    FORCE=1; run
     notify "sidebar tokens on: add \$ag_cost / \$ag_alert to ui.sidebar.agents.rows (see the plugin README)" ;;
   off)
     rm -f "$FLAG"
@@ -140,7 +159,7 @@ case "${1-}" in
     ag_unlock
     notify "sidebar tokens off" ;;
   run)
-    [ "${2-}" = --fresh ] && forget
+    if [ "${2-}" = --fresh ]; then forget; FORCE=1; fi
     run ;;
   *)
     echo "usage: ag-tokens.sh on|off|run [--fresh]" >&2; exit 2 ;;

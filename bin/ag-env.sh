@@ -7,7 +7,7 @@
 
 AGH_STATE=${HERDR_PLUGIN_STATE_DIR:-}
 AGH_CONFIG=${HERDR_PLUGIN_CONFIG_DIR:-}
-# the first agentglass release with CLI contract 1 (named at the plugin's first release; "" = not named)
+# the first agentglass release with CLI contract 1 ("" = not named). RELEASE: set to that tag before tagging v0.1.0
 AG_MIN_RELEASE=""
 AG_CONTRACT_MIN=1
 US=$(printf '\037')            # field separator of ag_csv_select (never in a value: control characters are dropped)

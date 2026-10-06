@@ -6,14 +6,19 @@ multiplexer where your agents run:
 
 - **agentglass popup**: the full agentglass TUI, one key away, over whatever you are doing.
 - **Open in agentglass**: the focused pane's agent session, opened in agentglass.
-- **`agentglass://` links**: Ctrl-click a link that agentglass prints, and the session opens in the popup.
+- **`agentglass://` links**: Ctrl-click a session link that agentglass prints (an OSC 8 hyperlink), and the session
+  opens in the popup.
 - **Workspace cost**: today's and the last 7 days' agent cost of the current workspace, as a herdr notification.
 - **Sidebar tokens** (opt-in): `$ag_cost` and `$ag_alert` per agent, and `$ag_cost` per workspace, in herdr's sidebar.
   The values have a fixed width and are sent only when they change.
 - **Notify recipe**: agentglass alerts that herdr cannot see (stalled, loop, long command, spinning, your own rules)
   show on the agent's pane, and critical ones become a herdr notification.
 
-<!-- Screenshots (taken with agentglass --redact) are added with v0.1.0: popup, row states, sidebar tokens, alert. -->
+| The popup (`prefix+g`) | Sidebar tokens | A loop alert |
+|---|---|---|
+| ![agentglass popup over herdr](docs/screenshots/popup.png) | ![$ag_cost and $ag_alert in the sidebar](docs/screenshots/sidebar.png) | ![herdr notification from the notify recipe](docs/screenshots/alert.png) |
+
+<sub>Taken in an isolated herdr 0.9.1 with fake sessions; agentglass in `--redact` mode.</sub>
 
 POSIX sh only: no Node, no jq, no build step. The plugin talks to agentglass only through its versioned
 [CLI contract](https://github.com/BjoernSchotte/agentglass/blob/main/docs/cli-contract.md), and to herdr only through
@@ -22,7 +27,8 @@ herdr's documented CLI.
 ## Requirements
 
 - herdr **0.7.5** or newer (plugin popups, startup hooks, sidebar tokens). Linux or macOS.
-- agentglass with **CLI contract 1** or newer (`agentglass --version --json` shows `"contract": 1`). Update with
+- agentglass **RELEASE-TAG** or newer: the first release with **CLI contract 1** (`agentglass --version --json` shows
+  `"contract": 1`). Update with
   `agentglass update` or `brew upgrade agentglass`. If agentglass is too old, the popups say so; the hooks do nothing.
 
 ## Install
@@ -105,8 +111,11 @@ sidebar_min_width = 30
 sidebar_max_width = 30
 ```
 
-Each update is one `agentglass --json --live` run (about 0.5 s). Runs never overlap. Events that arrive during a
-run cause one more run, not one per event.
+Each update is one `agentglass --json --live` run (about 0.5 s of CPU with a large history). Runs never overlap, and
+they are paced: at most one per 10 seconds (`TOKENS_MIN_INTERVAL` in the config file). Events that arrive in between
+cause one more run, not one per event, so a value can show up to 10 s late. Measured on herdr 0.9.1 with 30 status
+changes a minute: the herdr server and the plugin used 2.3 % of a core with tokens on, 0.5 % with tokens off; idle,
+there is no difference.
 
 ## Notify recipe (alerts herdr cannot see)
 
@@ -115,6 +124,10 @@ stalled with no log activity, a loop of identical tool calls, a command running 
 silent log, and the rules you write yourself. `bin/ag-alert.sh` shows these on the agent's pane as `$ag_alert` for
 10 minutes, and turns critical ones into a herdr notification (`loop · claude`). It never forwards `waiting` or
 `approval`, so you do not get two bells for one dialog.
+
+Alerts come from a running agentglass: the TUI while it is open, or a background `agentglass --watch --notify` (for
+example started with your session: `agentglass --watch --notify > /dev/null &`). The popup alone runs only while it
+is open.
 
 1. Find the two paths:
 
@@ -130,9 +143,19 @@ silent log, and the rules you write yourself. `bin/ag-alert.sh` shows these on t
      "notify": {
        "command": ["/bin/sh", "<plugin_root>/bin/ag-alert.sh", "<config dir>"],
        "on": ["fire", "escalate"]
-     }
+     },
+     "rules": [
+       { "id": "loop", "notify": true },
+       { "id": "long-cmd", "notify": true },
+       { "id": "stalled", "notify": true },
+       { "id": "spinning", "notify": true }
+     ]
    }
    ```
+
+   The built-in `loop`, `long-cmd`, `stalled` and `spinning` rules do not notify by default; `"notify": true` turns it
+   on. agentglass runs a notify command only from a `rules.json` that only you can write: `chmod 600
+   ~/.agentglass/rules.json`.
 
 3. agentglass gives a notify command only a small environment. Tell the script where herdr is, in
    `<config dir>/config`:
@@ -140,6 +163,13 @@ silent log, and the rules you write yourself. `bin/ag-alert.sh` shows these on t
    ```sh
    HERDR_SOCKET_PATH=/home/you/.config/herdr/herdr.sock   # only for a non-default server (herdr session)
    HERDR_BIN=/home/linuxbrew/.linuxbrew/bin/herdr         # only if herdr is not on PATH or in a usual place
+   ```
+
+4. herdr shows notifications only when toasts are on (they are off by default). In herdr's `config.toml`:
+
+   ```toml
+   [ui.toast]
+   delivery = "herdr"     # or "terminal" / "system"
    ```
 
 To stop agentglass's own approval and waiting bells for agents in herdr panes, because herdr's bell is enough, scope
@@ -156,6 +186,7 @@ text and never run.
 | `AGENTGLASS_REDACT=1` | agentglass runs in redact mode in the popups; no cost goes to herdr (no `$ag_cost`); workspace notifications name the workspace by id |
 | `HERDR_SOCKET_PATH` | the herdr server for the notify recipe (the popups and hooks get it from herdr) |
 | `HERDR_BIN` | path to herdr for the notify recipe |
+| `TOKENS_MIN_INTERVAL` | seconds between two sidebar-token runs (default 10; 0 = on every event) |
 
 ## Privacy
 
@@ -173,6 +204,11 @@ text and never run.
   `~/.local/state/herdr/plugins/agentglass/`). It records failed token updates, a missing or too old agentglass (once),
   and a stale run lock that was taken over.
 - The popup says "CLI contract 1 needed": update agentglass.
+- Ctrl-click on an `agentglass://` link does nothing: herdr recognizes plain-text links only for `http(s)://`. An
+  `agentglass://` link must be an OSC 8 hyperlink, as agentglass prints its session ids when the terminal supports
+  hyperlinks.
+- `$ag_alert` shows boxes instead of blanks: your terminal has no font fallback for U+2800 (braille blank). Most
+  terminals fall back to a font that has it (DejaVu Sans, Apple Braille); setting a fallback font fixes it.
 - Open in agentglass shows the session list: agentglass has not linked that pane's agent to a session yet. Check
   `agentglass --json --live --fields id,mux_pane`.
 
@@ -207,8 +243,10 @@ Each note: question · options · decision · why · cost if wrong.
    The user looks at the popup. · Cost if wrong: two TUIs for a moment.
 5. **Padding of `$ag_alert`**: spaces, NBSP, U+2800, or clearing the token · **U+2800**. herdr trims Unicode
    whitespace from token values, and an empty value clears the token. That would break the fixed width. Checked on
-   herdr 0.9.1: `⚠ stalled ` is stored as `⚠ stalled`, three spaces clear the token, 10 × U+2800 stays. · Cost if
-   wrong: a font that draws U+2800 visibly shows faint cells; the fallback is to clear the token.
+   herdr 0.9.1: `⚠ stalled ` is stored as `⚠ stalled`, three spaces clear the token, 10 × U+2800 stays; on screen
+   the blank rows keep the sidebar's row count and width while values change (I1). Monospace fonts (DejaVu Sans
+   Mono, JetBrains Mono) lack U+2800; terminals take it from a fallback font that draws it blank. · Cost if wrong: a
+   terminal without font fallback shows boxes; the fallback is to clear the token.
 6. **Rule ids in `$ag_alert`**: as written, or normalized · **lowercase `[a-z0-9_-]`, at most 8 characters**
    (`long cmd` → `long-cmd`). This keeps the fixed width, and no free text reaches herdr. · Cost if wrong: a long
    custom rule id shows cut.
@@ -232,6 +270,15 @@ Each note: question · options · decision · why · cost if wrong.
     `HERDR_BIN` and `HERDR_SOCKET_PATH` come from the config file.
 14. **Key bindings**: bind `prefix+g` in the manifest, or document them · **document them**, because a manifest binding
     can collide with your config. · Cost if wrong: one config block to copy.
+15. **Token pacing**: a run per event, or at most one per interval · **one per 10 s** (`TOKENS_MIN_INTERVAL`). With
+    many agents changing state, one agentglass run (≈ 0.5 s of CPU with a large history) per change adds up to a
+    busy core; measured unpaced 0.19 s CPU per change with a small history. · Cost if wrong: values up to 10 s late.
+16. **Lost events between a run's last check and its unlock**: a hook marks `dirty` *before* it tries the lock (and
+    before the event hook's fast path looks at it), and the holder checks `dirty` after its unlock: either the hook
+    gets the lock, or the holder sees `dirty`.
+17. **The notify recipe and agentglass's herdr discovery**: agentglass strips the notify environment (no
+    `HERDR_BIN_PATH`, often no herdr on `PATH`), so the `agentglass --json` the recipe runs could not see herdr panes.
+    The recipe passes its herdr as contract 1's `AGENTGLASS_HERDR` (found in I1: the pi stalled alert reached no pane).
 
 ## License
 

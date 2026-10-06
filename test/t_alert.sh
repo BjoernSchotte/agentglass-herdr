@@ -46,6 +46,11 @@ for s in S3 S4 S9; do
   eq "session $s: exit 0" "$rc" "0"
 done
 
+# agentglass gets the herdr binary the script uses (its own discovery has no HERDR_BIN_PATH in the stripped environment)
+reset_fakes
+mk stalled degraded fire S1 | alert "$CFG"
+eq "AGENTGLASS_HERDR passed to agentglass" "$(cat0 "$FAKE_DIR/ag.herdr")" "$FAKE_BIN/herdr"
+
 # the harness must match too (the same id under another harness is another session)
 reset_fakes
 mk stalled critical fire S1 | sed 's/"harness":"claude"/"harness":"codex"/' | alert "$CFG"

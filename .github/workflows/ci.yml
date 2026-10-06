@@ -27,10 +27,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: sh test/run.sh
   contract:
-    # the plugin's fields against the newest agentglass release (test/contract.sh); enabled in I1 once agentglass ships
-    # CLI contract 1
+    # the plugin's fields against the newest agentglass release (test/contract.sh)
     name: contract (newest agentglass release)
-    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

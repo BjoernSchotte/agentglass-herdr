@@ -28,6 +28,9 @@ ag_find # again: the config can name AGENTGLASS_BIN
 h=$(ag_cfg HERDR_BIN); [ -n "$h" ] && HERDR=$h
 if [ -z "$HERDR" ]; then echo "agentglass-herdr: herdr not found (set HERDR_BIN in $(ag_config_file))" >&2; exit 1; fi
 ag_socket
+# agentglass gets the same herdr: its own discovery runs in this stripped environment too (no HERDR_BIN_PATH, often a
+# PATH without herdr), and contract 1's AGENTGLASS_HERDR names the binary
+if [ -z "${AGENTGLASS_HERDR-}" ]; then AGENTGLASS_HERDR=$HERDR; export AGENTGLASS_HERDR; fi
 ag_need || exit 1
 
 # the session's herdr pane (contract 1: --json --live, fields id, harness, mux_kind, mux_pane)
