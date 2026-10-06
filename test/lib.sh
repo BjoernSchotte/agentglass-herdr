@@ -1,7 +1,9 @@
 # agentglass-herdr tests — assertions, sourced by every test/t_*.sh (run.sh sets ROOT, FAKE_DIR, TEST_SH, the state dirs)
 # SPDX-License-Identifier: Apache-2.0
-FAILS=0
-fail() { printf '    not ok: %s\n' "$*" >&2; FAILS=$((FAILS + 1)); }
+# failures are counted in a file, so a check inside a subshell or a pipeline counts too
+FAILS_FILE=$TMPDIR/fails.$$
+: > "$FAILS_FILE"
+fail() { printf '    not ok: %s\n' "$*" >&2; echo x >> "$FAILS_FILE"; }
 eq() { [ "$2" = "$3" ] || fail "$1: expected [$3], got [$2]"; }
 # the haystack in a message: one line, at most 300 characters
 short() { printf '%s' "$1" | tr '\n' '|' | cut -c 1-300; }
@@ -18,4 +20,4 @@ reset_fakes() {
 }
 # display columns of a token value: ⚠ (U+26A0) and the braille blank (U+2800) are one column each, the rest is ASCII
 cols() { printf '%s' "$1" | sed "s/$(printf '\342\232\240')/W/g; s/$(printf '\342\240\200')/_/g" | wc -c | tr -d ' '; }
-done_test() { [ "$FAILS" -eq 0 ]; exit $?; }
+done_test() { [ ! -s "$FAILS_FILE" ]; exit $?; }
