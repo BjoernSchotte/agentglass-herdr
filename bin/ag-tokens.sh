@@ -2,7 +2,7 @@
 # agentglass-herdr — sidebar tokens $ag_cost / $ag_alert: on | off | run [--fresh]
 #   on    enable (a flag file in the state dir) and report once      (action tokens-on)
 #   off   disable and clear every token this plugin set              (action tokens-off)
-#   run   one report, from the event and startup hooks (bin/ag-event.sh); --fresh forgets the last values first
+#   run   one report, from the event and startup hooks (bin/ag-event.sh); --fresh sends every value again
 # One run = one `agentglass --json --live --all-projects` (contract 1 fields mux_kind, mux_pane, costUsd, stuck) → for each
 # agent in a herdr pane `herdr pane report-metadata` with ag_cost (7 characters) and ag_alert (10 columns), and per
 # workspace the sum of its panes' cost. A value is sent only when it changed. Runs never overlap: an event during a run
@@ -104,6 +104,13 @@ run() {
   done
 }
 
+# forget the last values, but keep which panes and workspaces have tokens (so the next run sends every value again
+# and still clears the ones that no longer host an agent)
+forget() {
+  for f in "$LAST"/p.* "$LAST"/w.*; do [ -f "$f" ] && printf '%s\n%s\n' "?" "?" > "$f"; done
+  return 0
+}
+
 # wait for a running run (at most ~10 s), so it cannot report after we clear
 wait_lock() {
   n=0
@@ -114,7 +121,7 @@ case "${1-}" in
   on)
     if ! msg=$(ag_need 2>&1); then notify "$msg"; exit 1; fi
     : > "$FLAG"
-    rm -rf "$LAST"
+    forget
     run
     notify "sidebar tokens on: add \$ag_cost / \$ag_alert to ui.sidebar.agents.rows (see the plugin README)" ;;
   off)
@@ -132,7 +139,7 @@ case "${1-}" in
     ag_unlock
     notify "sidebar tokens off" ;;
   run)
-    [ "${2-}" = --fresh ] && rm -rf "$LAST"
+    [ "${2-}" = --fresh ] && forget
     run ;;
   *)
     echo "usage: ag-tokens.sh on|off|run [--fresh]" >&2; exit 2 ;;

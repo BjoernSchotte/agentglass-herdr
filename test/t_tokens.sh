@@ -86,6 +86,14 @@ eq "agentglass failure: no herdr call" "$(cat0 "$FAKE_DIR/herdr.log")" ""
 event startup
 eq "startup reports all again" "$(reports | grep -c .)" "5"
 
+# startup after an agent left: its pane is still cleared (forgetting keeps which panes have tokens)
+: > "$FAKE_DIR/herdr.log"
+grep -v '^S2,' "$FAKE_DIR/live.csv" > "$FAKE_DIR/live2.csv"; mv "$FAKE_DIR/live2.csv" "$FAKE_DIR/live.csv"
+event startup
+r=$(reports)
+has "startup: a pane left meanwhile is cleared" "$r" "pane report-metadata w7:p2 --source plugin:agentglass --clear-token ag_cost --clear-token ag_alert"
+has "startup: the others are sent again" "$r" "pane report-metadata w7:p1A --source plugin:agentglass --token ag_cost="
+
 # coalescing: two events during a run → exactly one more run
 reset_fakes
 tok on
