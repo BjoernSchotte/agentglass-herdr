@@ -5,7 +5,8 @@
 set -u
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/agh-test.XXXXXX")
-trap 'rm -rf "$WORK"' EXIT INT TERM
+trap 'rm -rf "$WORK"' EXIT
+trap 'exit 130' INT TERM HUP PIPE
 FAKE_BIN=$WORK/bin
 mkdir -p "$FAKE_BIN"
 ln -s "$ROOT/test/fake-herdr.sh" "$FAKE_BIN/herdr"

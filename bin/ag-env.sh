@@ -24,7 +24,7 @@ ag_upgrade_msg() {
 # ag_cfg KEY — the value of KEY=value in $HERDR_PLUGIN_CONFIG_DIR/config (last one wins, surrounding quotes dropped,
 # never evaluated); empty when unset
 ag_cfg() {
-  [ -n "$AGH_CONFIG" ] && [ -f "$AGH_CONFIG/config" ] || return 0
+  if [ -z "$AGH_CONFIG" ] || [ ! -f "$AGH_CONFIG/config" ]; then return 0; fi
   sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" "$AGH_CONFIG/config" | tail -n 1 |
     sed "s/[[:space:]]*\$//; s/^\"\\(.*\\)\"\$/\\1/; s/^'\\(.*\\)'\$/\\1/"
 }

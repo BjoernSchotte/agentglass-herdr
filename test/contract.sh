@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -u
 AG=${AGENTGLASS_BIN:-$(command -v agentglass || true)}
-[ -n "$AG" ] && [ -x "$AG" ] || { echo "contract: agentglass not found (set AGENTGLASS_BIN)" >&2; exit 1; }
+if [ -z "$AG" ] || [ ! -x "$AG" ]; then echo "contract: agentglass not found (set AGENTGLASS_BIN)" >&2; exit 1; fi
 
 # what bin/*.sh requests, per command (t_contract.sh checks that bin/ asks for nothing else)
 JSON_USED="id harness mux_kind mux_pane costUsd stuck"
@@ -16,7 +16,8 @@ failed=0
 bad() { echo "contract: $*" >&2; failed=1; }
 # an isolated agentglass: its own HOME and data dirs, never the user's sessions or config
 W=$(mktemp -d "${TMPDIR:-/tmp}/agh-contract.XXXXXX")
-trap 'rm -rf "$W"' EXIT INT TERM
+trap 'rm -rf "$W"' EXIT
+trap 'exit 130' INT TERM HUP PIPE
 mkdir -p "$W/home" "$W/run"; chmod 700 "$W/run"
 ag() {
   env HOME="$W/home" AGENTGLASS_AGENT=0 AGENTGLASS_NOTIFY=0 AGENTGLASS_CACHE_DIR="$W/cache" AGENTGLASS_CONFIG="$W/config.json" \

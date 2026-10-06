@@ -90,7 +90,8 @@ run() {
   rounds=0
   while [ "$rounds" -lt 3 ]; do
     if ! ag_lock; then : > "$DIRTY"; return 0; fi # a run is going: it goes again for us
-    trap 'ag_unlock' EXIT INT TERM
+    trap 'ag_unlock' EXIT
+    trap 'ag_unlock; exit 1' INT TERM HUP
     while [ "$rounds" -lt 3 ] && [ -f "$FLAG" ]; do
       rm -f "$DIRTY"
       one_run
@@ -98,7 +99,7 @@ run() {
       [ -f "$DIRTY" ] || break
     done
     ag_unlock
-    trap - EXIT INT TERM
+    trap - EXIT INT TERM HUP
     # an event that came between the last check and the unlock left the flag: take the lock again
     if [ ! -f "$DIRTY" ] || [ ! -f "$FLAG" ]; then break; fi
   done
