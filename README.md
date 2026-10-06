@@ -18,7 +18,7 @@ multiplexer where your agents run:
 *The agentglass popup (`prefix+g`) over a herdr workspace with a Claude and a pi pane; the preview names the agent's herdr pane.*
 
 ![herdr sidebar with $ag_cost and $ag_alert, and a loop alert notification](docs/screenshots/sidebar-alert.png)
-*herdr's sidebar with the opt-in tokens: cost per agent and workspace, `⚠ loop` on the agent stuck in a loop, and the notify recipe's toast.*
+*herdr's sidebar with the opt-in tokens: cost per agent and workspace (example values from fixture sessions), `⚠ loop` on the agent stuck in a loop, and the notify recipe's toast.*
 
 ![Open in agentglass on a focused pane](docs/screenshots/open-here.png)
 *"Open in agentglass" (`prefix+G`) on the focused Claude pane lands on that agent's session.*
