@@ -5,7 +5,8 @@
 set -u
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/agh-test.XXXXXX")
-trap 'rm -rf "$WORK"' EXIT INT TERM
+trap 'rm -rf "$WORK"' EXIT
+trap 'exit 130' INT TERM HUP PIPE
 FAKE_BIN=$WORK/bin
 mkdir -p "$FAKE_BIN"
 ln -s "$ROOT/test/fake-herdr.sh" "$FAKE_BIN/herdr"
@@ -29,10 +30,10 @@ for t in $tests; do
          ROOT="$ROOT" TEST_SH="$sh_cmd" FAKE_DIR="$d/fake" FAKE_BIN="$FAKE_BIN" \
          HERDR_PLUGIN_STATE_DIR="$d/state" HERDR_PLUGIN_CONFIG_DIR="$d/config" HERDR_BIN_PATH="$FAKE_BIN/herdr" \
          AGH_SEARCH_DIRS="$d/empty" \
-         $sh_cmd "$t" > "$d/out" 2>&1; then
+         $sh_cmd "$t" > "$d/test.log" 2>&1; then
       echo "ok   $name ($s)"
     else
-      echo "FAIL $name ($s)"; sed 's/^/    /' "$d/out"; failed=1
+      echo "FAIL $name ($s)"; sed 's/^/    /' "$d/test.log"; failed=1
     fi
   done
 done
