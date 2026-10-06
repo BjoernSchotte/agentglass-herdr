@@ -42,7 +42,7 @@ herdr's documented CLI.
 ## Requirements
 
 - herdr **0.7.5** or newer (plugin popups, startup hooks, sidebar tokens). Linux or macOS.
-- agentglass **RELEASE-TAG** or newer: the first release with **CLI contract 1** (`agentglass --version --json` shows
+- agentglass **2026.10.6** or newer: the first release with **CLI contract 1** (`agentglass --version --json` shows
   `"contract": 1`). Update with
   `agentglass update` or `brew upgrade agentglass`. If agentglass is too old, the popups say so; the hooks do nothing.
 

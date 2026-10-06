@@ -43,6 +43,7 @@ eq "no contract field → 0" "$(ag_contract)" "0"
 ag_need 2>"$TMPDIR/err"; eq "ag_need without contract" "$?" "1"
 has "upgrade line" "$(cat0 "$TMPDIR/err")" "contract 1"
 has "upgrade hint" "$(cat0 "$TMPDIR/err")" "agentglass update"
+has "names the first release with contract 1" "$(cat0 "$TMPDIR/err")" "(agentglass 2026.10.6 or newer)"
 # the binary changes (update in place) → asked again
 cp "$ROOT/test/fixtures/version.json" "$FAKE_DIR/version.json"; printf '\n# updated\n' >> "$AG"
 eq "an updated binary is checked again" "$(ag_contract)" "1"

@@ -7,8 +7,8 @@
 
 AGH_STATE=${HERDR_PLUGIN_STATE_DIR:-}
 AGH_CONFIG=${HERDR_PLUGIN_CONFIG_DIR:-}
-# the first agentglass release with CLI contract 1 ("" = not named). RELEASE: set to that tag before tagging v0.1.0
-AG_MIN_RELEASE=""
+# the first agentglass release with CLI contract 1
+AG_MIN_RELEASE="2026.10.6"
 AG_CONTRACT_MIN=1
 # Every awk here runs as LC_ALL=C awk: under a decimal-comma locale (de_DE, fr_FR) awk prints "5,79" and reads "5.79"
 # as 5. Only awk is pinned — agentglass itself (a popup) keeps the user's locale.

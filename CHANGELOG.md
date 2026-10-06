@@ -2,7 +2,7 @@
 
 All notable changes to agentglass-herdr. Versions follow semver. The plugin needs agentglass with CLI contract 1.
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-10-06
 
 ### Features
 
