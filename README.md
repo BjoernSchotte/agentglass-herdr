@@ -101,7 +101,7 @@ Put them in your sidebar layout:
 [ui.sidebar.agents]
 rows = [
   ["state_icon", "agent", "$ag_cost"],
-  [{ token = "$ag_alert", fg = "#f38ba8", bold = true }],
+  [{ "token" = "$ag_alert", fg = "#f38ba8", bold = true }],
 ]
 
 [ui.sidebar.spaces]
