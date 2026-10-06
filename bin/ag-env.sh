@@ -109,6 +109,23 @@ ag_run() {
   else AGENTGLASS_AGENT=0 "$AG" "$@"; fi
 }
 
+# ag_exec ARGS — replace this shell with agentglass, run as ag_run runs it
+ag_exec() {
+  if ag_redact; then exec env AGENTGLASS_AGENT=0 AGENTGLASS_REDACT=1 "$AG" "$@"
+  else exec env AGENTGLASS_AGENT=0 "$AG" "$@"; fi
+}
+
+# a herdr pane id (w7:p1A): letters, digits, colon, underscore, hyphen
+ag_valid_pane() {
+  [ -n "$1" ] || return 1
+  case "$1" in *[!A-Za-z0-9:_-]*) return 1 ;; esac
+}
+# an agentglass deep link the plugin passes on: agentglass://open/ + [A-Za-z0-9._:%/#=&?-]+ (spec B3), nothing else
+ag_valid_url() {
+  case "$1" in agentglass://open/?*) ;; *) return 1 ;; esac
+  case "${1#agentglass://open/}" in *[!A-Za-z0-9._:%/#=\&?-]*) return 1 ;; esac
+}
+
 # ag_log MSG — one line in the state dir's plugin.log (trimmed to the last 200 lines past 400)
 ag_log() {
   [ -n "$AGH_STATE" ] || return 0

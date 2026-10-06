@@ -1,6 +1,8 @@
 # bin/ag-env.sh: finding binaries, the contract check and its cache, config, lock, csv, fixed-width values
 # SPDX-License-Identifier: Apache-2.0
+# shellcheck source=test/lib.sh disable=SC2016 # literal $ in expected values is the point
 . "$ROOT/test/lib.sh"
+# shellcheck source=bin/ag-env.sh
 . "$ROOT/bin/ag-env.sh"
 
 # ── finding binaries ──
