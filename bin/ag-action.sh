@@ -15,7 +15,7 @@ open_pane() {
   if [ $# -gt 1 ]; then "$HERDR" plugin pane open --plugin "$PLUGIN" --entrypoint "$1" --env "$2"
   else "$HERDR" plugin pane open --plugin "$PLUGIN" --entrypoint "$1"; fi
 }
-notify() { "$HERDR" notification show agentglass --body "$1"; }
+notify() { "$HERDR" notification show agentglass --body "$1" >/dev/null; }
 
 # money for a notification: $12.82, unpriced → ?
 usd() { awk -v v="$1" 'BEGIN { if (v ~ /^[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/) printf "$%.2f", v; else printf "?" }'; }

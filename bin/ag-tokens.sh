@@ -18,7 +18,7 @@ LAST=$AGH_STATE/tokens # last reported values: p.<pane> / w.<workspace>, two lin
 
 if [ -z "$AGH_STATE" ]; then echo "agentglass-herdr: HERDR_PLUGIN_STATE_DIR not set" >&2; exit 1; fi
 ag_find
-notify() { [ -n "$HERDR" ] && "$HERDR" notification show agentglass --body "$1"; }
+notify() { [ -n "$HERDR" ] && "$HERDR" notification show agentglass --body "$1" >/dev/null; }
 
 # report KIND ID COST ALERT — send the tokens that changed against the last values (KIND pane | workspace); an empty
 # value clears a token that was set. The last values move only when herdr took the report.

@@ -201,12 +201,13 @@ Each note: question · options · decision · why · cost if wrong.
    `.agentglass/` path in `bin/`. · Cost if wrong: one more document for agentglass to keep.
 3. **How the target pane / clicked link reach the popup**: a state file or the popup's environment
    (`herdr plugin pane open --env`) · **environment**. No file is left behind when herdr refuses the popup (`ui_busy`),
-   and two quick invocations cannot race. · Cost if wrong: a herdr without `--env` for popups would show the session
-   list instead.
+   and two quick invocations cannot race. Checked on herdr 0.9.1: the popup process gets `AGH_TARGET`. · Cost if wrong:
+   a herdr without `--env` for popups would show the session list instead.
 4. **`--new-instance` in popups**: hand the link to an agentglass TUI running elsewhere, or open it here · **here**.
    The user looks at the popup. · Cost if wrong: two TUIs for a moment.
 5. **Padding of `$ag_alert`**: spaces, NBSP, U+2800, or clearing the token · **U+2800**. herdr trims Unicode
-   whitespace from token values, and an empty value clears the token. That would break the fixed width. · Cost if
+   whitespace from token values, and an empty value clears the token. That would break the fixed width. Checked on
+   herdr 0.9.1: `⚠ stalled ` is stored as `⚠ stalled`, three spaces clear the token, 10 × U+2800 stays. · Cost if
    wrong: a font that draws U+2800 visibly shows faint cells; the fallback is to clear the token.
 6. **Rule ids in `$ag_alert`**: as written, or normalized · **lowercase `[a-z0-9_-]`, at most 8 characters**
    (`long cmd` → `long-cmd`). This keeps the fixed width, and no free text reaches herdr. · Cost if wrong: a long
