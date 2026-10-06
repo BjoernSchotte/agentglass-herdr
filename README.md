@@ -14,11 +14,26 @@ multiplexer where your agents run:
 - **Notify recipe**: agentglass alerts that herdr cannot see (stalled, loop, long command, spinning, your own rules)
   show on the agent's pane, and critical ones become a herdr notification.
 
-| The popup (`prefix+g`) | Sidebar tokens | A loop alert |
-|---|---|---|
-| ![agentglass popup over herdr](docs/screenshots/popup.png) | ![$ag_cost and $ag_alert in the sidebar](docs/screenshots/sidebar.png) | ![herdr notification from the notify recipe](docs/screenshots/alert.png) |
+![agentglass popup over a herdr workspace](docs/screenshots/popup.png)
+*The agentglass popup (`prefix+g`) over a herdr workspace with a Claude and a pi pane; the preview names the agent's herdr pane.*
 
-<sub>Taken in an isolated herdr 0.9.1 with fake sessions; agentglass in `--redact` mode.</sub>
+![herdr sidebar with $ag_cost and $ag_alert, and a loop alert notification](docs/screenshots/sidebar-alert.png)
+*herdr's sidebar with the opt-in tokens: cost per agent and workspace, `⚠ loop` on the agent stuck in a loop, and the notify recipe's toast.*
+
+![Open in agentglass on a focused pane](docs/screenshots/open-here.png)
+*"Open in agentglass" (`prefix+G`) on the focused Claude pane lands on that agent's session.*
+
+![Sessions list with herdr row states](docs/screenshots/row-states.png)
+*herdr's state in agentglass's rows: spinner = working, `◆` = blocked at a dialog, `✓` = done and not seen yet.*
+
+![Sessions filtered to one herdr workspace](docs/screenshots/workspace.png)
+*"Sessions in this herdr workspace" (command palette) groups the sessions of one workspace (its label is hidden under `--redact`).*
+
+![Popup, then R jumps to the agent's pane](docs/screenshots/popup-jump.gif)
+*Popup → select a live agent → `R`: herdr focuses its pane and the popup closes.*
+
+<sub>All shots: an isolated herdr 0.9.1 with throwaway todo-app agents (stand-ins and a real pi), agentglass in
+`--redact` mode (fake titles and projects).</sub>
 
 POSIX sh only: no Node, no jq, no build step. The plugin talks to agentglass only through its versioned
 [CLI contract](https://github.com/BjoernSchotte/agentglass/blob/main/docs/cli-contract.md), and to herdr only through
