@@ -18,7 +18,7 @@ for r in approval waiting; do
   eq "$r: nothing (herdr rings itself)" "$(cat0 "$FAKE_DIR/herdr.log")" ""
   eq "$r: agentglass not even asked" "$(cat0 "$FAKE_DIR/ag.count")" ""
 done
-for s in resolve ack; do
+for s in resolve deescalate; do
   reset_fakes
   mk stalled critical "$s" S1 | alert "$CFG"
   eq "state $s: nothing" "$(cat0 "$FAKE_DIR/herdr.log")" ""
