@@ -42,7 +42,7 @@ reset_fakes
 eq "unpriced today" "$(cat0 "$FAKE_DIR/herdr.log")" 'notification show agentglass --body feat-y: ? today · $4.00 7 days'
 reset_fakes
 (HERDR_WORKSPACE_ID=w5 act workspace-cost)
-eq "a workspace without cost" "$(cat0 "$FAKE_DIR/herdr.log")" 'notification show agentglass --body w5: no agent cost in the last 7 days'
+eq "a workspace without cost (the total row is not a workspace)" "$(cat0 "$FAKE_DIR/herdr.log")" 'notification show agentglass --body w5: no agent cost in the last 7 days'
 reset_fakes
 printf 'AGENTGLASS_REDACT=1\n' > "$HERDR_PLUGIN_CONFIG_DIR/config"
 (HERDR_WORKSPACE_ID=w7 act workspace-cost)
