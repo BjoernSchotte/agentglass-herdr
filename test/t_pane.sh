@@ -39,6 +39,17 @@ b"; do
   eq "link: [$bad] exit 1" "$rc" "1"
 done
 
+# agentglass fails (a link to a session that is gone): the popup waits for Enter, exit status kept
+reset_fakes
+printf '#!/bin/sh\necho "agentglass: no claude session S9" >&2\nexit 3\n' > "$TMPDIR/ag3"; chmod +x "$TMPDIR/ag3"
+printf 'AGENTGLASS_BIN=%s\n' "$TMPDIR/ag3" > "$HERDR_PLUGIN_CONFIG_DIR/config"
+printf '%s\n%s\n' "$TMPDIR/ag3|$(ls -lL "$TMPDIR/ag3")" 1 > "$HERDR_PLUGIN_STATE_DIR/contract" # contract 1, cached
+(AGH_URL='agentglass://open/claude:S9' pane link); rc=$?
+eq "a failing agentglass keeps its exit status" "$rc" "3"
+has "its message shows" "$(cat0 "$TMPDIR/err")" "no claude session S9"
+has "and the popup waits" "$(cat0 "$TMPDIR/err")" "press Enter"
+rm -f "$HERDR_PLUGIN_CONFIG_DIR/config"
+
 # redact from the plugin config
 reset_fakes
 printf 'AGENTGLASS_REDACT=yes\n' > "$HERDR_PLUGIN_CONFIG_DIR/config"
