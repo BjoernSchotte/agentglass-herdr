@@ -7,15 +7,17 @@ tok() { tsh "$ROOT/bin/ag-tokens.sh" "$@" 2>>"$TMPDIR/err"; }
 event() { tsh "$ROOT/bin/ag-event.sh" "$@" 2>>"$TMPDIR/err"; }
 reports() { grep 'report-metadata' "$FAKE_DIR/herdr.log" 2>/dev/null || true; }
 B=$(printf '\342\240\200'); W=$(printf '\342\232\240')
+# no pacing in these cases (its own case is at the end): a fresh fake world with TOKENS_MIN_INTERVAL=0
+reset() { reset_fakes; printf 'TOKENS_MIN_INTERVAL=0\n' > "$HERDR_PLUGIN_CONFIG_DIR/config"; }
 
 # off by default: an event does nothing, not even run agentglass
-reset_fakes
+reset
 event; event startup
 eq "flag off: agentglass not run" "$(cat0 "$FAKE_DIR/ag.count")" ""
 eq "flag off: herdr not called" "$(cat0 "$FAKE_DIR/herdr.log")" ""
 
 # on: one run, a report per herdr pane and workspace, fixed widths
-reset_fakes
+reset
 tok on
 eq "on: one agentglass run" "$(cat0 "$FAKE_DIR/ag.count")" "1"
 r=$(reports)
@@ -65,7 +67,7 @@ has "gone pane cleared" "$r" "pane report-metadata w2:p1 --source plugin:agentgl
 has "empty workspace cleared" "$r" "workspace report-metadata w2 --source plugin:agentglass --clear-token ag_cost --clear-token ag_alert"
 
 # herdr refuses a report: the old values stay, so the next run tries again
-reset_fakes
+reset
 tok on
 cp "$ROOT/test/fixtures/live.csv" "$FAKE_DIR/live.csv"
 sed 's/,0.42,/,0.62,/' "$ROOT/test/fixtures/live.csv" > "$FAKE_DIR/live.csv"
@@ -95,7 +97,7 @@ has "startup: a pane left meanwhile is cleared" "$r" "pane report-metadata w7:p2
 has "startup: the others are sent again" "$r" "pane report-metadata w7:p1A --source plugin:agentglass --token ag_cost="
 
 # coalescing: two events during a run → exactly one more run
-reset_fakes
+reset
 tok on
 n0=$(cat "$FAKE_DIR/ag.count")
 (FAKE_AG_SLEEP=2 event) & p1=$!
@@ -108,23 +110,23 @@ eq "two events during a run → 2 runs in total" "$(($(cat "$FAKE_DIR/ag.count")
 [ -f "$HERDR_PLUGIN_STATE_DIR/dirty" ] && fail "dirty is consumed"
 
 # a stale lock (crashed run) is taken over
-reset_fakes
+reset
 tok on
 mkdir "$HERDR_PLUGIN_STATE_DIR/run.lock"; echo $(($(date +%s) - 300)) > "$HERDR_PLUGIN_STATE_DIR/run.lock/at"
 event startup
 eq "stale lock taken over" "$(cat "$FAKE_DIR/ag.count")" "2"
 
 # redact: no ag_cost anywhere; switching redact on clears the ag_cost already set
-reset_fakes
-printf 'AGENTGLASS_REDACT=1\n' > "$HERDR_PLUGIN_CONFIG_DIR/config"
+reset
+printf 'AGENTGLASS_REDACT=1\n' >> "$HERDR_PLUGIN_CONFIG_DIR/config"
 tok on
 r=$(reports)
 hasnt "redact: no ag_cost" "$r" "ag_cost="
 has "redact: alerts still" "$r" "pane report-metadata w7:p1A --source plugin:agentglass --token ag_alert=$W stalled$B"
 hasnt "redact: no workspace report" "$r" "workspace report-metadata"
-reset_fakes
+reset
 tok on
-printf 'AGENTGLASS_REDACT=1\n' > "$HERDR_PLUGIN_CONFIG_DIR/config"
+printf 'AGENTGLASS_REDACT=1\n' >> "$HERDR_PLUGIN_CONFIG_DIR/config"
 : > "$FAKE_DIR/herdr.log"
 event
 r=$(reports)
@@ -132,7 +134,7 @@ has "redact switched on: pane ag_cost cleared" "$r" "pane report-metadata w7:p1A
 has "redact switched on: workspace ag_cost cleared" "$r" "workspace report-metadata w7 --source plugin:agentglass --clear-token ag_cost --seq"
 
 # off: clears every token set, removes the flag; events do nothing afterwards
-reset_fakes
+reset
 tok on
 : > "$FAKE_DIR/herdr.log"
 tok off
@@ -145,16 +147,28 @@ n=$(cat "$FAKE_DIR/ag.count"); event
 eq "after off: no run" "$(cat "$FAKE_DIR/ag.count")" "$n"
 
 # on with agentglass < contract 1: refused with a notification, flag stays off
-reset_fakes
+reset
 cp "$FAKE_DIR/version-old.json" "$FAKE_DIR/version.json"
 tok on
 has "on refused" "$(cat0 "$FAKE_DIR/herdr.log")" "notification show agentglass --body agentglass with CLI contract 1 needed"
 [ -f "$HERDR_PLUGIN_STATE_DIR/tokens.on" ] && fail "flag stays off"
 # hooks with an old agentglass (upgraded away later): silent, logged once
-reset_fakes
+reset
 : > "$HERDR_PLUGIN_STATE_DIR/tokens.on"
 cp "$FAKE_DIR/version-old.json" "$FAKE_DIR/version.json"
 event; event
 eq "old agentglass: no herdr call" "$(reports)" ""
 eq "said once" "$(grep -c 'contract 1' "$HERDR_PLUGIN_STATE_DIR/plugin.log")" "1"
+# pacing: at most one run per TOKENS_MIN_INTERVAL; events meanwhile wait (coalesced), tokens-on is at once
+reset_fakes
+printf 'TOKENS_MIN_INTERVAL=2\n' > "$HERDR_PLUGIN_CONFIG_DIR/config"
+tok on
+t0=$(date +%s)
+event
+t1=$(date +%s)
+eq "on + one event → 2 runs" "$(cat "$FAKE_DIR/ag.count")" "2"
+[ $((t1 - t0)) -ge 1 ] || fail "the event right after tokens-on waited for the interval ($((t1 - t0)) s)"
+echo $(($(date +%s) - 5)) > "$HERDR_PLUGIN_STATE_DIR/last-run"
+t0=$(date +%s); event; t1=$(date +%s)
+[ $((t1 - t0)) -le 1 ] || fail "an event after the interval runs at once ($((t1 - t0)) s)"
 done_test

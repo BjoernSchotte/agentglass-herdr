@@ -38,6 +38,7 @@ case "$1" in
   --json)
     shift; check_args "$JSON_FIELDS" "$@"
     n=$(cat "$FAKE_DIR/ag.count" 2>/dev/null || echo 0); echo $((n + 1)) > "$FAKE_DIR/ag.count"
+    printf '%s\n' "${AGENTGLASS_HERDR-<unset>}" >> "$FAKE_DIR/ag.herdr"
     [ "${FAKE_AG_SLEEP:-0}" = 0 ] || sleep "$FAKE_AG_SLEEP"
     [ "${FAKE_AG_RC:-0}" = 0 ] || exit "$FAKE_AG_RC"
     cat "$FAKE_DIR/live.csv" ;;

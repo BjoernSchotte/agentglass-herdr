@@ -2,7 +2,7 @@
 
 All notable changes to agentglass-herdr. Versions follow semver. The plugin needs agentglass with CLI contract 1.
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-10-06
 
 ### Features
 
@@ -18,6 +18,8 @@ All notable changes to agentglass-herdr. Versions follow semver. The plugin need
   restart, no cost under redact.
 - `bin/ag-alert.sh`: the `rules.json` notify recipe. It forwards only alerts herdr cannot see (`$ag_alert` for 10
   minutes; critical alerts become a herdr notification).
+- Sidebar-token runs are paced (at most one per 10 s, `TOKENS_MIN_INTERVAL`), and a busy run makes the event hook
+  exit at once.
 - A runtime check for CLI contract ≥ 1 (cached per agentglass binary), with an upgrade message in popups and
   notifications.
 

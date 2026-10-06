@@ -7,9 +7,11 @@
 
 AGH_STATE=${HERDR_PLUGIN_STATE_DIR:-}
 AGH_CONFIG=${HERDR_PLUGIN_CONFIG_DIR:-}
-# the first agentglass release with CLI contract 1 (named at the plugin's first release; "" = not named)
-AG_MIN_RELEASE=""
+# the first agentglass release with CLI contract 1
+AG_MIN_RELEASE="2026.10.6"
 AG_CONTRACT_MIN=1
+# Every awk here runs as LC_ALL=C awk: under a decimal-comma locale (de_DE, fr_FR) awk prints "5,79" and reads "5.79"
+# as 5. Only awk is pinned — agentglass itself (a popup) keeps the user's locale.
 US=$(printf '\037')            # field separator of ag_csv_select (never in a value: control characters are dropped)
 BLANK=$(printf '\342\240\200') # U+2800: blank, one column, and not trimmed by herdr (it trims Unicode whitespace)
 WARN=$(printf '\342\232\240')  # U+26A0 ⚠
@@ -164,7 +166,7 @@ ag_unlock() { rm -rf "$AGH_STATE/run.lock"; }
 # → one line per row, the named columns joined by $US (a missing column is empty). agentglass's spreadsheet guard (a '
 # before a leading = + - @) is undone; control characters become spaces.
 ag_csv_select() {
-  awk -v want="$*" -v sep="$US" -v q="'" '
+  LC_ALL=C awk -v want="$*" -v sep="$US" -v q="'" '
     function parse(s, F,   i, c, n, v, inq, L) {
       n = 0; v = ""; inq = 0; L = length(s)
       for (i = 1; i <= L; i++) {
@@ -203,7 +205,7 @@ ag_csv_field() { printf '%s\n%s\n' "$1" "$2" | ag_csv_select "$3"; }
 # ag_fmt_cost USD — "$" + 6 columns, right-aligned: $  0.42, $ 12.40, $ 123.5, $  1.2k, $  1.5M; not a number
 # (unpriced) → $     ?. Always 7 characters.
 ag_fmt_cost() {
-  awk -v v="$1" 'BEGIN {
+  LC_ALL=C awk -v v="$1" 'BEGIN {
     if (v !~ /^[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/) { printf "$%6s", "?"; exit }
     v += 0
     if (v < 99.995) s = sprintf("%.2f", v)
