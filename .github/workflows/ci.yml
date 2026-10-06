@@ -25,7 +25,11 @@ jobs:
       matrix: { os: [ubuntu-latest, macos-latest] }
     steps:
       - uses: actions/checkout@v4
+      - name: decimal-comma locales (t_locale)
+        if: runner.os == 'Linux'
+        run: sudo locale-gen de_DE.UTF-8 fr_FR.UTF-8
       - run: sh test/run.sh
+        env: { AGH_REQUIRE_LOCALES: "1" }
   contract:
     # the plugin's fields against the newest agentglass release (test/contract.sh)
     name: contract (newest agentglass release)

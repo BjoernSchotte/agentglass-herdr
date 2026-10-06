@@ -63,8 +63,8 @@ one_run() {
   # one line per herdr pane (the first row = the newest session wins): pane, cost, stuck; then per workspace (the pane
   # id's part before ":" is herdr's workspace id) the sum of the priced panes
   rows=$(printf '%s\n' "$csv" | ag_csv_select mux_kind mux_pane costUsd stuck |
-    awk -F "$US" -v OFS="$US" '$1 == "herdr" && $2 != "" && !seen[$2]++ { print "p", $2, $3, $4 }')
-  sums=$(printf '%s\n' "$rows" | awk -F "$US" -v OFS="$US" '
+    LC_ALL=C awk -F "$US" -v OFS="$US" '$1 == "herdr" && $2 != "" && !seen[$2]++ { print "p", $2, $3, $4 }')
+  sums=$(printf '%s\n' "$rows" | LC_ALL=C awk -F "$US" -v OFS="$US" '
     $1 == "p" { w = $2; sub(/:.*/, "", w); if (!(w in has)) { has[w] = 0; order[++n] = w }
                 if ($3 ~ /^[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/) { sum[w] += $3; has[w] = 1 } }
     END { for (i = 1; i <= n; i++) { w = order[i]; print "w", w, (has[w] ? sprintf("%.6f", sum[w]) : "") } }')

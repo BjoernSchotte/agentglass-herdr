@@ -18,7 +18,7 @@ open_pane() {
 notify() { "$HERDR" notification show agentglass --body "$1" >/dev/null; }
 
 # money for a notification: $12.82, unpriced → ?
-usd() { awk -v v="$1" 'BEGIN { if (v ~ /^[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/) printf "$%.2f", v; else printf "?" }'; }
+usd() { LC_ALL=C awk -v v="$1" 'BEGIN { if (v ~ /^[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/) printf "$%.2f", v; else printf "?" }'; }
 
 case "${1-}" in
   tui)

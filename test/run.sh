@@ -29,7 +29,7 @@ for t in $tests; do
     if env -i PATH="$FAKE_BIN:/usr/bin:/bin" HOME="$d/home" TMPDIR="$d" LC_ALL=C \
          ROOT="$ROOT" TEST_SH="$sh_cmd" FAKE_DIR="$d/fake" FAKE_BIN="$FAKE_BIN" \
          HERDR_PLUGIN_STATE_DIR="$d/state" HERDR_PLUGIN_CONFIG_DIR="$d/config" HERDR_BIN_PATH="$FAKE_BIN/herdr" \
-         AGH_SEARCH_DIRS="$d/empty" \
+         AGH_SEARCH_DIRS="$d/empty" AGH_REQUIRE_LOCALES="${AGH_REQUIRE_LOCALES-}" \
          $sh_cmd "$t" > "$d/test.log" 2>&1; then
       echo "ok   $name ($s)"
     else
