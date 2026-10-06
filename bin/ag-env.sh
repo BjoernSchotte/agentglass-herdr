@@ -109,10 +109,13 @@ ag_run() {
   else AGENTGLASS_AGENT=0 "$AG" "$@"; fi
 }
 
-# ag_exec ARGS — replace this shell with agentglass, run as ag_run runs it
-ag_exec() {
-  if ag_redact; then exec env AGENTGLASS_AGENT=0 AGENTGLASS_REDACT=1 "$AG" "$@"
-  else exec env AGENTGLASS_AGENT=0 "$AG" "$@"; fi
+# ag_popup ARGS — agentglass in a popup, then exit with its status. A failure (a link to a session that is gone: exit
+# 3) keeps the popup open until Enter, so its message can be read; herdr closes the popup when this script exits.
+ag_popup() {
+  ag_run "$@"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then ag_wait_key; fi
+  exit "$rc"
 }
 
 # a herdr pane id (w7:p1A): letters, digits, colon, underscore, hyphen
