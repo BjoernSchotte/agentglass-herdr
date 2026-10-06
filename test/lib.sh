@@ -1,5 +1,7 @@
 # agentglass-herdr tests — assertions, sourced by every test/t_*.sh (run.sh sets ROOT, FAKE_DIR, TEST_SH, the state dirs)
 # SPDX-License-Identifier: Apache-2.0
+# NOTE: call helpers with one-off variables in a subshell, (VAR=x helper): a POSIX shell (bash --posix, macOS sh)
+# keeps VAR set after a function call.
 # failures are counted in a file, so a check inside a subshell or a pipeline counts too
 FAILS_FILE=$TMPDIR/fails.$$
 : > "$FAILS_FILE"
@@ -12,6 +14,9 @@ hasnt() { case "$2" in *"$3"*) fail "$1: [$3] must not be in [$(short "$2")]" ;;
 # the contents of a file, "" when it does not exist
 cat0() { cat "$1" 2>/dev/null || true; }
 lines() { if [ -f "$1" ]; then wc -l < "$1" | tr -d ' '; else echo 0; fi; }
+# the shell under test ("dash", "bash", "sh" or "bash --posix") running a script
+# shellcheck disable=SC2086 # TEST_SH may be two words
+tsh() { $TEST_SH "$@"; }
 # a fresh fake world between cases of one test file
 reset_fakes() {
   rm -rf "$FAKE_DIR" "$HERDR_PLUGIN_STATE_DIR" "$HERDR_PLUGIN_CONFIG_DIR"

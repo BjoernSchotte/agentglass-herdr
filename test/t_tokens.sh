@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # shellcheck source=test/lib.sh disable=SC2016 # literal $ in expected values is the point
 . "$ROOT/test/lib.sh"
-tok() { "$TEST_SH" "$ROOT/bin/ag-tokens.sh" "$@" 2>>"$TMPDIR/err"; }
-event() { "$TEST_SH" "$ROOT/bin/ag-event.sh" "$@" 2>>"$TMPDIR/err"; }
+tok() { tsh "$ROOT/bin/ag-tokens.sh" "$@" 2>>"$TMPDIR/err"; }
+event() { tsh "$ROOT/bin/ag-event.sh" "$@" 2>>"$TMPDIR/err"; }
 reports() { grep 'report-metadata' "$FAKE_DIR/herdr.log" 2>/dev/null || true; }
 B=$(printf '\342\240\200'); W=$(printf '\342\232\240')
 
@@ -70,7 +70,7 @@ tok on
 cp "$ROOT/test/fixtures/live.csv" "$FAKE_DIR/live.csv"
 sed 's/,0.42,/,0.62,/' "$ROOT/test/fixtures/live.csv" > "$FAKE_DIR/live.csv"
 : > "$FAKE_DIR/herdr.log"
-FAKE_HERDR_REPORT_RC=1 event
+(FAKE_HERDR_REPORT_RC=1 event)
 has "failure logged" "$(cat0 "$HERDR_PLUGIN_STATE_DIR/plugin.log")" "report-metadata w7:p1A failed"
 : > "$FAKE_DIR/herdr.log"
 event
@@ -78,7 +78,7 @@ has "retried after a failure" "$(reports)" "w7:p1A --source plugin:agentglass --
 
 # agentglass fails: nothing is reported or cleared
 : > "$FAKE_DIR/herdr.log"
-FAKE_AG_RC=1 event
+(FAKE_AG_RC=1 event)
 eq "agentglass failure: no herdr call" "$(cat0 "$FAKE_DIR/herdr.log")" ""
 
 # startup forgets the last values (a new herdr server has no metadata): everything again
@@ -90,10 +90,10 @@ eq "startup reports all again" "$(reports | grep -c .)" "5"
 reset_fakes
 tok on
 n0=$(cat "$FAKE_DIR/ag.count")
-FAKE_AG_SLEEP=2 event & p1=$!
+(FAKE_AG_SLEEP=2 event) & p1=$!
 sleep 1
-FAKE_AG_SLEEP=2 event & p2=$!
-FAKE_AG_SLEEP=2 event & p3=$!
+(FAKE_AG_SLEEP=2 event) & p2=$!
+(FAKE_AG_SLEEP=2 event) & p3=$!
 wait "$p1" "$p2" "$p3"
 eq "two events during a run → 2 runs in total" "$(($(cat "$FAKE_DIR/ag.count") - n0))" "2"
 [ -d "$HERDR_PLUGIN_STATE_DIR/run.lock" ] && fail "the lock is released"

@@ -100,7 +100,7 @@ run() {
     ag_unlock
     trap - EXIT INT TERM
     # an event that came between the last check and the unlock left the flag: take the lock again
-    [ -f "$DIRTY" ] && [ -f "$FLAG" ] || break
+    if [ ! -f "$DIRTY" ] || [ ! -f "$FLAG" ]; then break; fi
   done
 }
 
