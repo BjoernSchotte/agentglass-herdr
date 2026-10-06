@@ -1,0 +1,29 @@
+name: Release
+# a tag vX.Y.Z publishes a GitHub release with that version's CHANGELOG section; the manifest version must match the tag
+on:
+  push:
+    tags: ["v*"]
+permissions: { contents: write }
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: tests
+        run: sh test/run.sh
+      - name: manifest version = tag
+        run: |
+          tag=${GITHUB_REF_NAME}
+          v=$(sed -n 's/^version = "\(.*\)"$/\1/p' herdr-plugin.toml)
+          [ "v$v" = "$tag" ] || { echo "::error::manifest version $v does not match tag $tag"; exit 1; }
+      - name: release notes from CHANGELOG
+        run: |
+          v=${GITHUB_REF_NAME#v}
+          awk -v v="$v" '$0 ~ "^## " v "( |$)" { on = 1; next } on && /^## / { exit } on { print }' CHANGELOG.md > notes.md
+          head=$(grep -m1 "^## $v" CHANGELOG.md || true)
+          [ -s notes.md ] || { echo "::error::no CHANGELOG section for $v"; exit 1; }
+          case "$head" in *unreleased*) echo "::error::CHANGELOG section $v is still marked unreleased"; exit 1 ;; esac
+      - name: publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag

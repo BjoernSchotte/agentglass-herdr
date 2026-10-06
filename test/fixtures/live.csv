@@ -1,0 +1,6 @@
+id,harness,title,cwd,live,pid,status,costUsd,attention,stuck,mux_kind,mux_pane,mux_workspace,mux_tab,mux_status
+S1,claude,Fix the login form,/home/dev/shop,true,101,busy,0.42,false,stalled,herdr,w7:p1A,feat-x,2,working
+S2,codex,"SECRET-TITLE, with a comma",/secret/path,true,102,idle,12.4,true,,herdr,w7:p2,feat-x,3,blocked
+S3,pi,Refactor the cart,/home/dev/shop,true,103,idle,1.5,false,,tmux,work:1.0,,,
+S4,claude,No multiplexer,/home/dev/blog,true,104,busy,0.1,false,,,,,,
+S5,gemini,Write the docs,/home/dev/docs,true,105,idle,,false,long cmd,herdr,w2:p1,feat-y,1,idle

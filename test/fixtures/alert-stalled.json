@@ -1,0 +1,1 @@
+{"rule":"stalled","severity":"degraded","state":"fire","value":600,"unit":"s","threshold":480,"since":"2026-10-06T10:00:00.000Z","session":"S1","harness":"claude","title":"SECRET-TITLE","project":"secret-project","message":"no log activity in /secret/path","labels":{}}

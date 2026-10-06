@@ -1,0 +1,1 @@
+{"id":"cli:workspace:list","result":{"type":"workspace_list","workspaces":[{"workspace_id":"w7","label":"feat-x"},{"workspace_id":"w2","label":"feat-y"}]}}

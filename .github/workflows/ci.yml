@@ -1,0 +1,39 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions: { contents: read }
+concurrency: { group: "ci-${{ github.ref }}", cancel-in-progress: true }
+jobs:
+  lint:
+    name: shellcheck + manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck --version && shellcheck -s sh bin/*.sh test/*.sh
+      - name: manifest parses as TOML
+        run: python3 -c "import tomllib; tomllib.load(open('herdr-plugin.toml', 'rb'))"
+  test:
+    # every test under every POSIX shell found: ubuntu dash + bash + sh, macOS bash 3.2 + sh
+    name: test ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix: { os: [ubuntu-latest, macos-latest] }
+    steps:
+      - uses: actions/checkout@v4
+      - run: sh test/run.sh
+  contract:
+    # the plugin's fields against the newest agentglass release (test/contract.sh); enabled in I1 once agentglass ships
+    # CLI contract 1
+    name: contract (newest agentglass release)
+    if: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -fsSL https://raw.githubusercontent.com/BjoernSchotte/agentglass/main/install.sh | sh
+      - run: AGENTGLASS_BIN="$HOME/.local/bin/agentglass" sh test/contract.sh

@@ -1,0 +1,96 @@
+id = "agentglass"
+name = "agentglass"
+version = "0.1.0"
+min_herdr_version = "0.7.5"
+description = "agentglass inside herdr: the TUI as a popup, open the focused agent's session, agentglass:// links, opt-in cost and alert sidebar tokens"
+platforms = ["linux", "macos"]
+
+# Every command runs through /bin/sh (herdr runs argv without a shell). The scripts call agentglass only through its
+# versioned CLI contract (docs/cli-contract.md in the agentglass repo) and herdr only through its documented CLI.
+# No key bindings here: the README gives the [[keys.command]] lines (a manifest binding could collide with yours).
+
+# ── panes: popups with the agentglass TUI ──
+[[panes]]
+id = "tui"
+title = "agentglass"
+placement = "popup"
+width = "90%"
+height = "90%"
+command = ["/bin/sh", "bin/ag-pane.sh", "tui"]
+
+[[panes]]
+id = "open"
+title = "agentglass"
+placement = "popup"
+width = "90%"
+height = "90%"
+command = ["/bin/sh", "bin/ag-pane.sh", "open"]
+
+[[panes]]
+id = "link"
+title = "agentglass"
+placement = "popup"
+width = "90%"
+height = "90%"
+command = ["/bin/sh", "bin/ag-pane.sh", "link"]
+
+# ── actions ──
+[[actions]]
+id = "tui"
+title = "agentglass"
+description = "Open the agentglass TUI in a popup."
+contexts = ["global"]
+command = ["/bin/sh", "bin/ag-action.sh", "tui"]
+
+[[actions]]
+id = "open-here"
+title = "Open in agentglass"
+description = "Open the focused pane's agent session in agentglass."
+contexts = ["pane"]
+command = ["/bin/sh", "bin/ag-action.sh", "open-here"]
+
+[[actions]]
+id = "workspace-cost"
+title = "agentglass: cost of this workspace"
+description = "Show today's and the last 7 days' agent cost of this workspace."
+contexts = ["workspace"]
+command = ["/bin/sh", "bin/ag-action.sh", "workspace-cost"]
+
+[[actions]]
+id = "open-link"
+title = "agentglass: open link"
+description = "Open an agentglass:// link (used by the link handler)."
+command = ["/bin/sh", "bin/ag-action.sh", "open-link"]
+
+[[actions]]
+id = "tokens-on"
+title = "agentglass: sidebar tokens on"
+description = "Report $ag_cost and $ag_alert for agent panes and workspaces (fixed width, on change only)."
+contexts = ["global"]
+command = ["/bin/sh", "bin/ag-tokens.sh", "on"]
+
+[[actions]]
+id = "tokens-off"
+title = "agentglass: sidebar tokens off"
+description = "Stop reporting and clear $ag_cost and $ag_alert everywhere they were set."
+contexts = ["global"]
+command = ["/bin/sh", "bin/ag-tokens.sh", "off"]
+
+# ── link handler: Ctrl-click on agentglass://open/... ──
+[[link_handlers]]
+id = "agentglass-link"
+title = "Open in agentglass"
+pattern = "^agentglass://open/"
+action = "open-link"
+
+# ── hooks: keep the sidebar tokens fresh (they do nothing until tokens-on) ──
+[[events]]
+on = "pane.agent_status_changed"
+command = ["/bin/sh", "bin/ag-event.sh"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["/bin/sh", "bin/ag-event.sh"]
+
+[[startup]]
+command = ["/bin/sh", "bin/ag-event.sh", "startup"]
