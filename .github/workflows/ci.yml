@@ -37,5 +37,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - run: curl -fsSL https://raw.githubusercontent.com/BjoernSchotte/agentglass/main/install.sh | sh
-      - run: AGENTGLASS_BIN="$HOME/.local/bin/agentglass" sh test/contract.sh
+      # the newest release through gh with the job's token: install.sh asks the GitHub API without a token, and shared
+      # runner IPs hit its rate limit (403)
+      - name: newest agentglass release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir -p "$RUNNER_TEMP/ag" && cd "$RUNNER_TEMP/ag"
+          gh release download -R BjoernSchotte/agentglass --pattern agentglass-linux-x64.tar.gz --pattern SHA256SUMS
+          sha256sum -c --ignore-missing SHA256SUMS
+          tar xzf agentglass-linux-x64.tar.gz
+      - run: AGENTGLASS_BIN="$RUNNER_TEMP/ag/agentglass" sh test/contract.sh
