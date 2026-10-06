@@ -1,0 +1,2 @@
+# shellcheck reads this from the repo root: follow sourced files (directives name them relative to the root)
+external-sources=true

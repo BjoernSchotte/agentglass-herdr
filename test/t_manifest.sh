@@ -1,5 +1,6 @@
 # the manifest declares what spec B2 lists, its version is the newest CHANGELOG version, and it binds no keys
 # SPDX-License-Identifier: Apache-2.0
+# shellcheck source=test/lib.sh disable=SC2016 # literal $ in expected values is the point
 . "$ROOT/test/lib.sh"
 m=$(grep -v '^#' "$ROOT/herdr-plugin.toml")
 has "plugin id" "$m" 'id = "agentglass"'

@@ -1,5 +1,6 @@
 # the plugin uses only agentglass's CLI contract: no reads of its data or cache files (Review Focus 7)
 # SPDX-License-Identifier: Apache-2.0
+# shellcheck source=test/lib.sh disable=SC2016 # literal $ in expected values is the point
 . "$ROOT/test/lib.sh"
 hits=$(grep -rn -e '\.agentglass/' -e 'AGENTGLASS_CACHE' -e 'AGENTGLASS_RUN_DIR' "$ROOT/bin" || true)
 eq "no agentglass internals in bin/" "$hits" ""
