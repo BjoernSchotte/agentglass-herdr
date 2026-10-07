@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: shellcheck --version && shellcheck -s sh bin/*.sh test/*.sh
       - name: manifest parses as TOML
         run: python3 -c "import tomllib; tomllib.load(open('herdr-plugin.toml', 'rb'))"
@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       matrix: { os: [ubuntu-latest, macos-latest] }
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: decimal-comma locales (t_locale)
         if: runner.os == 'Linux'
         run: sudo locale-gen de_DE.UTF-8 fr_FR.UTF-8
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # the newest release through gh with the job's token: install.sh asks the GitHub API without a token, and shared
       # runner IPs hit its rate limit (403)
       - name: newest agentglass release

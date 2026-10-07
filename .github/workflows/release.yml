@@ -1,29 +1,43 @@
 name: Release
-# a tag vX.Y.Z publishes a GitHub release with that version's CHANGELOG section; the manifest version must match the tag
+# a tag vX.Y.Z publishes a GitHub release with that version's CHANGELOG section; the manifest version must match the tag.
+# Run workflow: every check on the dispatched ref as if it were tagged <tag>, publishing nothing (dry_run, the default;
+# a PR's CI never runs this workflow), or publish an existing tag whose run failed (dry_run off: checks out the tag).
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag: { description: "tag to check or publish, e.g. v0.1.0", required: true, type: string }
+      dry_run: { description: "check only, publish nothing", type: boolean, default: true }
 permissions: { contents: write }
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env: { TAG: "${{ inputs.tag || github.ref_name }}" }
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run && inputs.tag || github.sha }}" }
       - name: tests
         run: sh test/run.sh
       - name: manifest version = tag
         run: |
-          tag=${GITHUB_REF_NAME}
+          tag=$TAG
           v=$(sed -n 's/^version = "\(.*\)"$/\1/p' herdr-plugin.toml)
           [ "v$v" = "$tag" ] || { echo "::error::manifest version $v does not match tag $tag"; exit 1; }
       - name: release notes from CHANGELOG
         run: |
-          v=${GITHUB_REF_NAME#v}
+          v=${TAG#v}
           awk -v v="$v" '$0 ~ "^## " v "( |$)" { on = 1; next } on && /^## / { exit } on { print }' CHANGELOG.md > notes.md
           head=$(grep -m1 "^## $v" CHANGELOG.md || true)
           [ -s notes.md ] || { echo "::error::no CHANGELOG section for $v"; exit 1; }
           case "$head" in *unreleased*) echo "::error::CHANGELOG section $v is still marked unreleased"; exit 1 ;; esac
       - name: publish
+        if: ${{ !inputs.dry_run }}
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+        run: gh release create "$TAG" --title "$TAG" --notes-file notes.md --verify-tag
+      - name: dry run — would publish
+        if: ${{ inputs.dry_run }}
+        run: |
+          { echo "dry run: would publish $TAG with these notes"; echo; cat notes.md; } >> "$GITHUB_STEP_SUMMARY"
+          cat notes.md
